@@ -16,13 +16,6 @@ class AtLeastOneSpiderAlive implements UnitRequirementPredicate
         g.destr()
         return result
 
-/*
-*  Heroes are limited to two 1H weapons.
-*  Heroes are limited to one 2H weapon.
-*  Tauren Chieftain is an exception, he can hold up to two 2H weapons.
-*  1H weapons and 2H weapons exclude ech other.
-*  Spider Ring can only be picked up if at least one spider is alive on the map.
-*/
 init
     var weapon1h = new ItemRestriction("1H-weapon", 2)
     var weapon2h = new ItemRestriction("2H-weapon", 1)
@@ -39,3 +32,10 @@ init
     weapon2h.addItem('mlst')
     weapon2h.addExclusive(weapon1h)
     weapon2h.addException(tauren, 2)
+
+    print("ItemRestriction system by Bannar.\nFor restricting or limiting items from being equipped.\n\n")
+    print("Heroes are limited to two 1H weapons.\n" +
+        "Heroes are limited to one 2H weapon.\n" +
+        "Tauren Chieftain is an exception, he can hold up to two 2H weapons.\n" +
+        "1H weapons and 2H weapons exclude ech other.\n" +
+        "Spider Ring can only be picked up if at least one spider is alive on the map.\n\n")
