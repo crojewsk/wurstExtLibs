@@ -1,0 +1,417 @@
+/*
+*  ItemRestriction v1.1.1.2
+*     by Bannar
+*
+*  For restricting or limiting items from being equipped.
+*/
+package ItemRestriction
+import HashMap
+import LinkedList
+import UnitIndexer
+import RegisterEvents
+import Orders
+
+HashMap<int, LinkedList<ItemRestriction>> restrictionsMap
+
+@configurable function getUnitTypeErrorMessage(UnitRequirement _requirement, int _unitId) returns string
+    return "This item can not be hold by this unit type."
+
+@configurable function getLevelErrorMessage(UnitRequirement _requirement, int level) returns string
+    return "This item requires level " + level.toString() + " to be picked up."
+
+@configurable function getStatisticErrorMessage(UnitRequirement _requirement, int value, string statistic) returns string
+    return "This item requires " + value.toString() + " " + statistic + "."
+
+@configurable function getLimitErrorMessage(ItemRestriction restriction, int limit) returns string
+    return "This unit can not hold more than " + limit.toString() + " item(s) of \"" + restriction.name + "\" type."
+
+@configurable function getExclusiveErrorMessage(ItemRestriction first, ItemRestriction second) returns string
+    return "This unit cannot hold items of type \"" + first.name + "\" and \"" + second.name + "\" at the same time."
+
+@configurable function getForbiddenErrorMessage(ItemRestriction _restriction) returns string
+    return "This item can not be picked up by this unit."
+
+public interface UnitRequirementPredicate
+    function isMet(unit whichUnit) returns string
+
+/** Set of unit-specific requirements. */ 
+public class UnitRequirement
+    /** Unit type requirement. Omitted if empty. */
+    LinkedList<int> typeIds
+    /** Unit level requirement. */
+    int level
+    /** Hero strength requirement. */
+    int strength
+    /** Hero agility requirement. */
+    int agility
+    /** Hero intelligence requirement. */
+    int intelligence
+    /** Whether to include bonuses when checking unit statistics. */
+    bool includeBonuses
+    /** Name associated with requirement. */
+    string name
+    private LinkedList<UnitRequirementPredicate> conditions
+
+    construct(string name, int lvl, int str, int agi, int intel, bool includeBonuses)
+        typeIds = new LinkedList<int>()
+        level = lvl
+        strength = str
+        agility = agi
+        intelligence = intel
+        this.includeBonuses = includeBonuses
+        this.name = name
+        conditions = new LinkedList<UnitRequirementPredicate>()
+    
+    construct(string name)
+        typeIds = new LinkedList<int>()
+        level = 0
+        strength = 0
+        agility = 0
+        intelligence = 0
+        includeBonuses = false
+        this.name = name
+        conditions = new LinkedList<UnitRequirementPredicate>()
+    
+    ondestroy
+        destroy typeIds
+        destroy conditions
+
+    /** Whether specified unit type is a part of requirement. */
+    function has(int unitTypeId) returns boolean
+        return typeIds.contains(unitTypeId)
+
+    /** Sets hero statistic requirements to specified values. */
+    function requireStat(int str, int agi, int intel)
+        strength = str
+        agility = agi
+        intelligence = intel
+
+    /** Adds new criteria to requirement criterias. */
+    function addCondition(UnitRequirementPredicate predicate)
+        if predicate == null
+            return
+        conditions.add(predicate)
+
+    /** Removes specified condition from requirement criterias. */
+    function removeCondition(UnitRequirementPredicate predicate)
+        if predicate == null
+            return
+        conditions.remove(predicate)
+
+    /** Validates whether specified unit meets this unit requirements. */
+    function test(unit whichUnit) returns string
+        int unitTypeId = whichUnit.getTypeId()
+        string errorMessage
+
+        if not typeIds.isEmpty() and not has(unitTypeId)
+            return getUnitTypeErrorMessage(this, unitTypeId)
+        if level > 0 and whichUnit.getLevel() < level
+            return getLevelErrorMessage(this, level)
+        if strength > 0 and whichUnit.getStr(includeBonuses) < strength
+            return getStatisticErrorMessage(this, strength, "Strength")
+        if agility > 0 and whichUnit.getAgi(includeBonuses) < agility
+            return getStatisticErrorMessage(this, agility, "Agility")
+        if intelligence > 0 and whichUnit.getInt(includeBonuses) < intelligence
+            return getStatisticErrorMessage(this, intelligence, "Intelligence")
+
+        for condition in conditions
+            errorMessage = condition.isMet(whichUnit)
+            if errorMessage != null
+                return errorMessage
+
+        return null
+
+    /** Returns value indicating whether specified unit successfully passed requirement test. */
+    function filter(unit whichUnit) returns bool
+        return test(whichUnit) == null
+
+public class LimitException
+    UnitRequirement requirement
+    int newLimit
+
+    construct(UnitRequirement requirement, int newLimit)
+        this.requirement = requirement
+        this.newLimit = newLimit
+
+/** Allows to restrict or limit the number of item equipped by unit. */
+public class ItemRestriction
+    // Stores essential data:
+    //  unit.index: current item count
+    //  unit.-index: currently chosen exception from the exception list
+    protected Table cache
+    /** Item types that enforce this restriction. */
+    LinkedList<int> typeIds
+    /** Maximum number of items a unit can carry. */
+    int limit
+    /** Collection of UnitRequirement instances that may define different limits.
+        Example: berserker may carry two 2H-weapons, rather than one. */
+    LinkedList<LimitException> exceptions
+    /** Collection of ItemRestriction instances that exclude each other from being picked.
+        Example: a unit cannot carry both 1H-weapons and 2H-weapons at the same time. */
+    LinkedList<ItemRestriction> exclusives
+    /** Requirement a unit must meet to hold items. */
+    UnitRequirement requirement
+    /** Name associated with restriction. */
+    string name
+
+    construct(string name, int limit, UnitRequirement requirement)
+        cache = new Table()
+        typeIds = new LinkedList<int>()
+        exceptions = new LinkedList<LimitException>()
+        exclusives = new LinkedList<ItemRestriction>()
+        this.name = name
+        this.limit = limit
+        this.requirement = requirement
+
+        restrictionsMap.get(0).push(this)
+    
+    construct(string name, int limit)
+        cache = new Table()
+        typeIds = new LinkedList<int>()
+        exceptions = new LinkedList<LimitException>()
+        exclusives = new LinkedList<ItemRestriction>()
+        this.name = name
+        this.limit = limit
+        this.requirement = null
+
+        restrictionsMap.get(0).push(this)
+
+    ondestroy
+        LinkedList<ItemRestriction> restrictions
+
+        for itemTypeId in typeIds
+            restrictions = restrictionsMap.get(itemTypeId)
+            restrictions.remove(this)
+            if restrictions.isEmpty()
+                destroy restrictions
+                restrictionsMap.remove(itemTypeId)
+        
+        restrictions = restrictionsMap.get(0)
+        restrictions.remove(this)
+
+        if not exclusives.isEmpty()
+            for exclusive in exclusives
+                exclusive.exclusives.remove(this)
+        
+        destroy cache
+        destroy typeIds
+        destroy exceptions
+        destroy exclusives
+        this.name = null
+        this.limit = 0
+    
+    /** Whether specified item type is a part of restriction. */
+    function has(int itemTypeId) returns boolean
+        return typeIds.contains(itemTypeId)
+
+    /** Remove specified item type from this restriction. */
+    function removeItem(int itemTypeId)
+        LinkedList<ItemRestriction> restrictions
+
+        if has(itemTypeId)
+            typeIds.remove(itemTypeId)
+            restrictions = restrictionsMap.get(itemTypeId)
+            restrictions.remove(this)
+            if restrictions.isEmpty()
+                destroy restrictions
+                restrictionsMap.remove(itemTypeId)
+
+    /** Add specified item type to this restriction. */
+    function addItem(int itemTypeId)
+        LinkedList<ItemRestriction> restrictions
+
+        if itemTypeId <= 0
+            return
+
+        if not has(itemTypeId)
+            typeIds.push(itemTypeId)
+
+            if not restrictionsMap.has(itemTypeId)
+                restrictions = new LinkedList<ItemRestriction>()
+                restrictions.push(this)
+                restrictionsMap.put(itemTypeId, restrictions)
+            else
+                restrictions = restrictionsMap.get(itemTypeId)
+                if not restrictions.contains(this)
+                    restrictions.push(this)
+
+    /** Removes item limit exception for specified requirement. */
+    function removeException(UnitRequirement requirement)
+        let iter = exceptions.iterator()
+        for exception from iter
+            if exception.requirement == requirement
+                iter.remove()
+                destroy exception
+                break
+        iter.close()
+
+    /** Adds new item limit exception for specified requirement. */
+    function addException(UnitRequirement requirement, int newLimit)
+        LimitException entry = null
+
+        let iter = exceptions.iterator()
+        for exception from iter
+            if exception.requirement == requirement
+                entry = exception
+                break
+        iter.close()
+
+        if entry == null
+            exceptions.push(new LimitException(requirement, newLimit))
+    
+    /** Makes specified restriction non-exclusive with this restriction. */
+    function removeExclusive(ItemRestriction restriction)
+        if exclusives.contains(restriction)
+            exclusives.remove(restriction)
+            restriction.exclusives.remove(this)
+    
+    /** Makes specified restriction exclusive with this restriction. */
+    function addExclusive(ItemRestriction restriction)
+        if restriction != null and not exclusives.contains(restriction)
+            exclusives.push(restriction)
+            restriction.exclusives.push(this)
+
+    /** Returns related to this restriction, current item count for specified unit. */
+    function getCount(unit whichUnit) returns int
+        return cache.loadInt(whichUnit.getIndex())
+
+    /** Modyfies related to this restriction, item count for specified unit. */
+    protected function setCount(unit u, int count)
+        cache.saveInt(u.getIndex(), count)
+
+    /** Returns currently chosen limit exception if any for specified unit. */
+    function getException(unit whichUnit) returns LimitException
+        return cache.loadInt(-whichUnit.getIndex()) castTo LimitException
+
+    /** Sets limit exception for specified unit. */
+    protected function setException(unit u, LimitException exception)
+        cache.saveInt(-u.getIndex(), exception castTo int)
+
+    /** Validates whether specified unit can hold specified itm given the restriction criteria. */
+    function test(unit whichUnit, item whichItem) returns string
+        LimitException exception
+        int threshold = limit
+
+        if not has(whichItem.getTypeId())
+            return null
+        else if requirement != null
+            let errorMessage = requirement.test(whichUnit)
+            if errorMessage != null
+                return errorMessage
+
+        for exclusive in exclusives
+            if exclusive.getCount(whichUnit) > 0
+                return getExclusiveErrorMessage(this, exclusive)
+
+        if not exceptions.isEmpty()
+            exception = getException(whichUnit)
+            if exception == null or not exceptions.contains(exception)
+                cache.removeInt(-whichUnit.getIndex()) // clear assigned exception if any
+
+                var iter = exceptions.iterator()
+                while iter.hasNext()
+                    exception = iter.next()
+                    if exception.requirement.filter(whichUnit)
+                        threshold = exception.newLimit
+                        setException(whichUnit, exception)
+                        break
+                iter.close()
+            else
+                threshold = exception.newLimit
+
+        if threshold <= 0
+            return getForbiddenErrorMessage(this)
+        if getCount(whichUnit) >= threshold
+            return getLimitErrorMessage(this, threshold)
+        
+        return null
+    
+    /** Returns value indicating whether specified unit successfully passed restriction test for specified item. */
+    function filter(unit whichUnit, item whichItem) returns bool
+        return test(whichUnit, whichItem) == null
+
+// Returns null (not allowed), empty list (no restrictions) or non-empty list (restrictions to increase count for).
+// Caller is responsible for destroying retrieved list if any
+function evaluateRestrictions(unit u, item itm) returns LinkedList<ItemRestriction>
+    let associated = new LinkedList<ItemRestriction>()
+    LinkedList<ItemRestriction> restrictions
+    int itemTypeId = itm.getTypeId()
+    string errorMessage
+
+    if not restrictionsMap.has(itemTypeId)
+        return associated
+
+    restrictions = restrictionsMap.get(itemTypeId)
+    for restriction in restrictions
+        errorMessage = restriction.test(u, itm)
+
+        if errorMessage != null
+            printTimedToPlayer(errorMessage, 2, u.getOwner())
+            destroy associated
+            return null
+        associated.push(restriction)
+
+    return associated
+
+function onPickup()
+    let itm = GetManipulatedItem()
+    int count
+
+    if not itm.isPowerup()
+        let u = GetTriggerUnit()
+        let associated = evaluateRestrictions(u, itm)
+
+        if associated != null
+            for restriction in associated
+                count = restriction.getCount(u)
+                restriction.setCount(u, count + 1)
+            destroy associated
+        else
+            trigger t = getPlayerUnitEventTrigger(EVENT_PLAYER_UNIT_DROP_ITEM)
+            t.disable()
+            u.removeItem(itm)
+            t.enable()
+
+function onDrop()
+    let itemTypeId = GetManipulatedItem().getTypeId()
+    LinkedList<ItemRestriction> restrictions
+    int count
+
+    if not restrictionsMap.has(itemTypeId)
+        return
+
+    restrictions = restrictionsMap.get(itemTypeId)
+    let u = GetTriggerUnit()
+    for restriction in restrictions
+        count = restriction.getCount(u)
+        if count > 0
+            restriction.setCount(u, count - 1)
+
+function onTargetOrder()
+    let itm = GetOrderTargetItem()
+    unit u
+
+    if GetIssuedOrderId() == SpecialOrders.smart and itm != null
+        u = GetTriggerUnit()
+        if evaluateRestrictions(u, itm) == null
+            u.abortOrder()
+
+function onDeindex()
+    let u = getDeindexedUnit()
+    let index = u.getIndex()
+    let restrictions = restrictionsMap.get(0)
+
+    for restriction in restrictions
+        if restriction.cache.hasInt(index)
+            restriction.cache.flush()
+
+init
+    // For extra speed, each item type involved will have separate list assigned
+    restrictionsMap = new HashMap<int, LinkedList<ItemRestriction>>()
+    // Global instance list for handling deindex event
+    restrictionsMap.put(0, new LinkedList<ItemRestriction>())
+    
+    registerPlayerUnitEvent(EVENT_PLAYER_UNIT_PICKUP_ITEM, () -> onPickup())
+    registerPlayerUnitEvent(EVENT_PLAYER_UNIT_DROP_ITEM, () -> onDrop())
+    registerPlayerUnitEvent(EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER, () -> onTargetOrder())
+    onUnitDeindex(() -> onDeindex())

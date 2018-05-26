@@ -1,0 +1,41 @@
+package ItemRestrictionDemo
+import ItemRestriction
+
+class AtLeastOneSpiderAlive implements UnitRequirementPredicate
+    static function filter() returns boolean
+        return GetFilterUnit().getTypeId() == 'nssp' and GetFilterUnit().isAlive() // Spitting Spider
+
+    function isMet(unit _whichUnit) returns string
+        group g = CreateGroup()
+        string result = null
+
+        g.enumUnitsInRect(bj_mapInitialPlayableArea, Filter(function filter))
+        if not g.hasNext()
+            result = "There are no spider alive on the map. Spare a few."
+
+        g.destr()
+        return result
+
+/*
+*  Heroes are limited to two 1H weapons.
+*  Heroes are limited to one 2H weapon.
+*  Tauren Chieftain is an exception, he can hold up to two 2H weapons.
+*  1H weapons and 2H weapons exclude ech other.
+*  Spider Ring can only be picked up if at least one spider is alive on the map.
+*/
+init
+    var weapon1h = new ItemRestriction("1H-weapon", 2)
+    var weapon2h = new ItemRestriction("2H-weapon", 1)
+    var tauren = new UnitRequirement("tauren")
+    var spiderRing = new ItemRestriction("Friend of the spiders", 1)
+    var atLeastOneSpiderAlive = new UnitRequirement("Spare the spiders")
+
+    spiderRing.addItem('sprn')
+    atLeastOneSpiderAlive.addCondition(new AtLeastOneSpiderAlive())
+    spiderRing.requirement = atLeastOneSpiderAlive
+
+    tauren.typeIds.push('Otch')
+    weapon1h.addItem('desc')
+    weapon2h.addItem('mlst')
+    weapon2h.addExclusive(weapon1h)
+    weapon2h.addException(tauren, 2)
