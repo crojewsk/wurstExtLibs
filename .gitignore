@@ -4,4 +4,4 @@
 wurst.build
 wurst.dependencies
 wurst_run.args
-wurst/InitDemos.wurst
+/wurst/InitDemos.wurst
