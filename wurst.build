@@ -1,5 +1,5 @@
 ---
-projectName: "WurstItemRestriction"
+projectName: "wurstExtLibs"
 dependencies:
 - "https://github.com/wurstscript/wurstStdlib2"
 buildMapData:
