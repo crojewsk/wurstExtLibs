@@ -1,4 +1,6 @@
-.vscode/settings.json
+.vscode
+
+# ignore wurst build artifacts
 /_build
 /wurst/war3map.j
 wurst.build
