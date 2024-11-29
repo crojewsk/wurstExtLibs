@@ -1,8 +1,8 @@
 ---
-projectName: "wurstExtLibs"
+projectName: wurstExtLibs
 dependencies:
-- "https://github.com/wurstscript/wurstStdlib2"
+- https://github.com/wurstscript/wurstStdlib2
 buildMapData:
-  name: "DefaultName"
-  fileName: "DefaultFileName"
-  author: "DefaultAuthor"
+  name: DefaultName
+  fileName: DefaultFileName
+  author: DefaultAuthor

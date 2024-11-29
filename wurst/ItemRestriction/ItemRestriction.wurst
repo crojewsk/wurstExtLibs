@@ -362,7 +362,7 @@ function onTargetOrder()
             destroy associated
 
 function onDeindex()
-    var index = getDeindexedUnit().getIndex()
+    var index = getIndexingUnit().getIndex()
     var restrictions = ItemRestriction.getRestrictions(0)
 
     if restrictions != null
