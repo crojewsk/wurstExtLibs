@@ -36,7 +36,7 @@ public function getItemStackingCharges() returns int
 
 /** Returns trigger handle associated with specified item stacking event. */
 public function getItemStackingEventTrigger(EVENT_ITEM_CHARGES whichEvent) returns trigger
-    trigger result = null
+    trigger result
 
     switch whichEvent
         case EVENT_ITEM_CHARGES.ADDED

@@ -39,7 +39,7 @@ public function getInventorySwappedItem() returns item
     return eventState.u.itemInSlot(eventState.slotTo)
 
 public function getInventoryEventTrigger(EVENT_ITEM_INVENTORY whichEvent) returns trigger
-    trigger result = null
+    trigger result
 
     switch whichEvent
         case EVENT_ITEM_INVENTORY.MOVE
