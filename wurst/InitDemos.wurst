@@ -5,7 +5,7 @@ import ItemRestrictionDemo
 import StackNSplitDemo
 
 init
-    //initInventoryEventDemo()
+    initInventoryEventDemo()
     initItemRecipeDemo()
-    //initItemRestrictionDemo()
-    //initStackNSplitDemo()
+    initItemRestrictionDemo()
+    initStackNSplitDemo()
