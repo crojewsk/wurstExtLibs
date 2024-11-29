@@ -73,7 +73,7 @@ class PeriodicData
         return result
 
 function fireEvent(eventInfo currState)
-    var prevState = eventState
+    let prevState = eventState
     eventState = currState
     eventTrigger.evaluate()
     eventState = prevState
@@ -81,14 +81,14 @@ function fireEvent(eventInfo currState)
 function test(unit u, item itm, real range) returns boolean
     if u.hasItem(itm)
         return true
-    var pos = itm.getPos() - u.getPos()
+    let pos = itm.getPos() - u.getPos()
     // Assumes range is multipled to avoid invoking SquareRoot
     return pos.dot(pos) <= range
 
 function onCallback()
-    var iter = PeriodicData.iterator()
+    let iter = PeriodicData.iterator()
     while iter.hasNext()
-        var data = iter.next()
+        let data = iter.next()
         if not data.picker.isAlive() or data.picker.getCurrentOrder() != Orders.move or not data.itm.isPickupable()
             destroy data
         else
@@ -98,11 +98,11 @@ function onCallback()
     iter.close()
 
 function onTargetOrder()
-    var u = GetTriggerUnit()
+    let u = GetTriggerUnit()
     if not u.isInventoryFull() or GetIssuedOrderId() != SpecialOrders.smart
         return
 
-    var itm = GetOrderTargetItem()
+    let itm = GetOrderTargetItem()
     if itm == null or itm.isPowerup()
         return
 
@@ -114,8 +114,8 @@ function onTargetOrder()
     if not proceed
         return
 
-    var collision = u.getCollisionSize()
-    var range = (PICK_UP_RANGE + collision) * (PICK_UP_RANGE + collision)
+    let collision = u.getCollisionSize()
+    let range = (PICK_UP_RANGE + collision) * (PICK_UP_RANGE + collision)
     if test(u, itm, range)
         // Ensures order is finished before item is picked up.
         // Fixes the issue with unit moving towards the item location, rather than stopping
@@ -131,10 +131,10 @@ function onTargetOrder()
             data = new PeriodicData(u, range)
         data.itm = itm
 
-        var ipos = itm.getPos()
-        var angle = ipos.angleTo(u.getPos())
-        var resultPos = ipos + angle.toVec(PICK_UP_RANGE)
-        var t = getPlayerUnitEventTrigger(EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER)
+        let ipos = itm.getPos()
+        let angle = ipos.angleTo(u.getPos())
+        let resultPos = ipos + angle.toVec(PICK_UP_RANGE)
+        let t = getPlayerUnitEventTrigger(EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER)
         t.disable()
         u.issuePointOrderById(Orders.move, resultPos)
         t.enable()

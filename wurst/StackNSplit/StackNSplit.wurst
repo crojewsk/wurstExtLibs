@@ -135,7 +135,7 @@ public function makeItemStackable(int elementType, int stacks) returns boolean
 
 /** Unsets any container related data related to specified element item type. */
 public function unsetItemContainer(int containerType)
-    var elementType = getItemContainerItem(containerType)
+    let elementType = getItemContainerItem(containerType)
     if elementType != 0
         table.removeInt(0, containerType)
         table.removeInt(1, containerType)
@@ -143,7 +143,7 @@ public function unsetItemContainer(int containerType)
         table.removeInt(4, containerType)
 
         // Remove containerType from containers list
-        var containers = getItemContainers(elementType)
+        let containers = getItemContainers(elementType)
         containers.remove(containerType)
         if containers.isEmpty()
             destroy containers
@@ -186,44 +186,44 @@ public function unit.isItemFullyStacked(int itemTypeId) returns boolean
         return true
 
     var result = true
-    var last = this.inventorySize() - 1
+    let last = this.inventorySize() - 1
     if itemHasContainer(itemTypeId)
         for containerType in getItemContainers(itemTypeId)
-            var max = getItemContainerMaxStacks(containerType)
+            let max = getItemContainerMaxStacks(containerType)
             if max > 0
                 for slot = 0 to last
-                    var itm = this.itemInSlot(slot)
+                    let itm = this.itemInSlot(slot)
                     if itm.getTypeId() == containerType and itm.getCharges() < max
                         result = false
                         break
 
     if result and isItemStackable(itemTypeId)
-        var max = getItemMaxStacks(itemTypeId)
+        let max = getItemMaxStacks(itemTypeId)
         if max > 0
             for slot = 0 to last
-                var itm = this.itemInSlot(slot)
+                let itm = this.itemInSlot(slot)
                 if itm.getTypeId() == itemTypeId and itm.getCharges() < max
                     result = false
                     break
     return result
 
 function fireEvent(trigger evt, eventInfo currState)
-    var prevState = eventState
+    let prevState = eventState
     eventState = currState
     evt.evaluate()
     eventState = prevState
 
 function stackItem(unit u, item itm, item ignored, int withTypeId, int max) returns int
     var charges = itm.getCharges()
-    var last = u.inventorySize() - 1
+    let last = u.inventorySize() - 1
 
     for slot = 0 to last
-        var with = u.itemInSlot(slot)
+        let with = u.itemInSlot(slot)
         if with != ignored and with.getTypeId() == withTypeId
-            var withCharges = with.getCharges()
+            let withCharges = with.getCharges()
 
             if withCharges < max
-                var diff = max - withCharges
+                let diff = max - withCharges
                 if diff >= charges
                     with.setCharges(withCharges + charges)
                     itm.remove()
@@ -245,7 +245,7 @@ public function unit.stackItem(item whichItem) returns boolean
         return false
 
     var result = false
-    var itemTypeId = whichItem.getTypeId()
+    let itemTypeId = whichItem.getTypeId()
     if not isItemContainer(itemTypeId)
         if itemHasContainer(itemTypeId)
             for containerType in getItemContainers(itemTypeId)
@@ -264,8 +264,8 @@ public function unit.stackItem(item whichItem) returns boolean
 
 /** Attempts to split provided item for specified unit. */
 public function unit.splitItem(item whichItem) returns boolean
-    var charges = whichItem.getCharges()
-    var itemTypeId = whichItem.getTypeId()
+    let charges = whichItem.getCharges()
+    let itemTypeId = whichItem.getTypeId()
     int elementType
     int toSplit
     var minCharges = 1
@@ -288,7 +288,7 @@ public function unit.splitItem(item whichItem) returns boolean
     whichItem.setCharges(charges - toSplit)
     fireEvent(eventRemovedTrigger, eventInfo(this, whichItem, toSplit))
 
-    var with = createItem(elementType, this.getPos())
+    let with = createItem(elementType, this.getPos())
     with.setCharges(toSplit)
     // Redistribute splitted stacks if possible
     if itemHasContainer(elementType)
@@ -300,30 +300,30 @@ public function unit.splitItem(item whichItem) returns boolean
         toSplit = stackItem(this, with, whichItem, elementType, getItemMaxStacks(elementType))
 
     if toSplit > 0 // something is left
-        var t = getPlayerUnitEventTrigger(EVENT_PLAYER_UNIT_PICKUP_ITEM)
+        let t = getPlayerUnitEventTrigger(EVENT_PLAYER_UNIT_PICKUP_ITEM)
         t.disable()
         this.addItemHandle(with)
         t.enable()
     return true
 
 function pickupItem(unit u, item itm)
-    var itemTypeId = itm.getTypeId()
+    let itemTypeId = itm.getTypeId()
 
     if isItemContainer(itemTypeId)
-        var max = getItemContainerMaxStacks(itemTypeId)
-        var elementType = getItemContainerItem(itemTypeId)
+        let max = getItemContainerMaxStacks(itemTypeId)
+        let elementType = getItemContainerItem(itemTypeId)
         var charges = itm.getCharges()
-        var last = u.inventorySize() - 1
+        let last = u.inventorySize() - 1
 
         for slot = 0 to last
             if charges >= max
                 break
-            var with = u.itemInSlot(slot)
-            var withCharges = with.getCharges()
+            let with = u.itemInSlot(slot)
+            let withCharges = with.getCharges()
 
             if with != itm and withCharges > 0 and with.getTypeId() == elementType
                 if charges + withCharges > max
-                    int diff = max - charges
+                    let diff = max - charges
                     itm.setCharges(max)
                     with.setCharges(withCharges - diff)
                     fireEvent(eventRemovedTrigger, eventInfo(u, with, diff))
@@ -341,19 +341,19 @@ function onPickup()
     pickupItem(GetTriggerUnit(), GetManipulatedItem())
 
 function onMoved()
-    var slotFrom = getInventorySlotFrom()
+    let slotFrom = getInventorySlotFrom()
     if slotFrom == getInventorySlotTo() // splitting
         getInventoryManipulatingUnit().splitItem(getInventoryManipulatedItem())
         return
 
-    var u = getInventoryManipulatingUnit()
+    let u = getInventoryManipulatingUnit()
     var itm = getInventoryManipulatedItem()
-    var itemTypeId = itm.getTypeId()
+    let itemTypeId = itm.getTypeId()
     if not isItemContainer(itemTypeId)
-        var charges = itm.getCharges()
-        var swapped = getInventorySwappedItem()
-        var swappedTypeId = swapped.getTypeId()
-        var swappedCharges = swapped.getCharges()
+        let charges = itm.getCharges()
+        let swapped = getInventorySwappedItem()
+        let swappedTypeId = swapped.getTypeId()
+        let swappedCharges = swapped.getCharges()
         var max = 0
 
         if charges > 0
@@ -363,7 +363,7 @@ function onMoved()
                 max = getItemContainerMaxStacks(swappedTypeId)
 
         if max > 0
-            var total = charges + swappedCharges
+            let total = charges + swappedCharges
             if total > max
                 if swappedCharges < max // if not met, allow for standard replacement action
                     var t = getPlayerUnitEventTrigger(EVENT_PLAYER_UNIT_DROP_ITEM)
@@ -378,7 +378,7 @@ function onMoved()
                     itm = u.itemInSlot(slotFrom)
                     itm.setCharges(total - max)
                     swapped.setCharges(max)
-                    var diff = max - charges
+                    let diff = max - charges
                     fireEvent(eventRemovedTrigger, eventInfo(u, itm, diff))
                     fireEvent(eventAddedTrigger, eventInfo(u, swapped, diff))
             else
@@ -391,7 +391,7 @@ function onSmoothPickup()
 
 class SmoothChargesStack implements SmoothPickupPredicate
     override function canPickup(unit whichUnit, item whichItem) returns boolean
-        var itemTypeId = whichItem.getTypeId()
+        let itemTypeId = whichItem.getTypeId()
         var result = false
 
         if isItemContainer(itemTypeId)

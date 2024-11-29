@@ -7,7 +7,7 @@ class NoTrollsAlive implements UnitRequirementPredicate
         return GetFilterUnit().getTypeId() == 'ndtb' and GetFilterUnit().isAlive() // Spitting Spider
 
     override function isMet(unit _whichUnit) returns string
-        var g = CreateGroup()
+        let g = CreateGroup()
         string result = null
 
         g.enumUnitsInRect(bj_mapInitialPlayableArea, Filter(function filter))
@@ -58,14 +58,14 @@ function createAllItems()
 public function initItemRecipeDemo()
     createAllItems()
 
-    var noTrollsAlive = new UnitRequirement("No trolls alive")
+    let noTrollsAlive = new UnitRequirement("No trolls alive")
     noTrollsAlive.addCondition(new NoTrollsAlive())
 
-    var magicKeyChain = new ItemRecipe('mgtk', 0, false, true, true)
+    let magicKeyChain = new ItemRecipe('mgtk', 0, false, true, true)
     magicKeyChain.addItem('kybl')
     magicKeyChain.addItem('kygh')
 
-    var critter = new ItemRecipe('mcri', 2, false, true, true)
+    let critter = new ItemRecipe('mcri', 2, false, true, true)
     critter..startBatch()
         ..addItem('kybl')
         ..addItem('kygh')
@@ -80,14 +80,14 @@ public function initItemRecipeDemo()
     crown.addItem('mcou')
     crown.requirement = noTrollsAlive
 
-    var shadowOrb = new ItemRecipe('sora', 0, false, true, false)
+    let shadowOrb = new ItemRecipe('sora', 0, false, true, false)
     shadowOrb.addItem('oli2')
     shadowOrb.addItem('ofir')
     shadowOrb.addItem('oven')
     shadowOrb.addItem('ocor')
     shadowOrb.setAbility('AHtc')
 
-    var fullVial = new ItemRecipe('bzbf', 0, false, true, true)
+    let fullVial = new ItemRecipe('bzbf', 0, false, true, true)
     fullVial.addItem('bzbe')
     fullVial.addItem('wlsd')
     fullVial.addItem('woms')

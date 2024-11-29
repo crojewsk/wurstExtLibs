@@ -3,11 +3,11 @@ import InventoryEvent
 import ClosureTimers
 
 function onInventoryMove()
-    var u = getInventoryManipulatingUnit()
-    var itm = getInventoryManipulatedItem()
-    var itmSwapped = getInventorySwappedItem()
-    var slotFrom = getInventorySlotFrom()
-    var slotTo = getInventorySlotTo()
+    let u = getInventoryManipulatingUnit()
+    let itm = getInventoryManipulatedItem()
+    let itmSwapped = getInventorySwappedItem()
+    let slotFrom = getInventorySlotFrom()
+    let slotTo = getInventorySlotTo()
     string s
 
     if itmSwapped != null
@@ -18,10 +18,10 @@ function onInventoryMove()
     print(s)
 
 function onInventoryUse()
-    var u = getInventoryManipulatingUnit()
-    var itm = getInventoryManipulatedItem()
-    var slotFrom = getInventorySlotFrom()
-    var s = u.getName() + " used " + itm.getName() + "[" + slotFrom.toString() + "]"
+    let u = getInventoryManipulatingUnit()
+    let itm = getInventoryManipulatedItem()
+    let slotFrom = getInventorySlotFrom()
+    let s = u.getName() + " used " + itm.getName() + "[" + slotFrom.toString() + "]"
 
     print(s)
 
@@ -30,8 +30,8 @@ public function initInventoryEventDemo()
     registerInventoryEvent(EVENT_ITEM_INVENTORY.USE, () -> onInventoryUse())
 
     doAfter(1.) ->
-        real x = -200
-        real y = -200
+        let x = -200.0
+        let y = -200.0
         CreateItem('bspd', x, y) // Boots
         CreateItem('crys', x, y) // Crystall Ball
         CreateItem('infs', x, y) // Inferno

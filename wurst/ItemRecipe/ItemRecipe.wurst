@@ -44,15 +44,15 @@ public function getItemRecipeEventTrigger() returns trigger
     return eventTrigger
 
 function unit.getItemList() returns LinkedList<item>
-    var last = this.inventorySize() - 1
-    var items = new LinkedList<item>()
+    let last = this.inventorySize() - 1
+    let items = new LinkedList<item>()
 
     for slot = 0 to last
         items.push(this.itemInSlot(slot))
     return items
 
 function fireEvent(eventInfo currState)
-    var prevState = eventState
+    let prevState = eventState
     eventState = currState
     eventTrigger.evaluate()
     eventState = prevState
@@ -96,12 +96,12 @@ public class ItemRecipe
     private static function saveRecipe(int index, ItemRecipe recipe)
         if not instances.has(index)
             instances.put(index, new LinkedList<ItemRecipe>())
-        var recipes = instances.get(index)
+        let recipes = instances.get(index)
         if not recipes.has(recipe)
             recipes.push(recipe)
 
     private static function flushRecipe(int index, ItemRecipe recipe)
-        var recipes = instances.get(index)
+        let recipes = instances.get(index)
         recipes.remove(recipe)
         if recipes.isEmpty()
             destroy recipes
@@ -187,12 +187,12 @@ public class ItemRecipe
     /** Removes all entries that match specified item type from recipe ingredient list. */
     function removeItem(int itemTypeId)
         if not batch // removing item when batch is ongoing is forbidden
-            var iter = ingredients.iterator()
+            let iter = ingredients.iterator()
             var found = false
 
             for ingredient from iter
                 if ingredient.itemTypeId == itemTypeId
-                    var entry = iter.current
+                    let entry = iter.current
                     // Decrement count only if this item is not part of any batch
                     if (entry.prev == iter.dummy or entry.prev.elem.index != ingredient.index) and
                        (entry.next == iter.dummy or entry.next.elem.index != ingredient.index)
@@ -206,7 +206,7 @@ public class ItemRecipe
     /** Adds new entry to recipe ingredient list. */
     function addItem(int itemTypeId, boolean perishable, int charges)
         if itemTypeId != reward
-            var ingredient = new RecipeIngredient(itemTypeId, perishable, max(charges, 0), count)
+            let ingredient = new RecipeIngredient(itemTypeId, perishable, max(charges, 0), count)
             ingredients.push(ingredient)
             if not batch
                 count++
@@ -218,15 +218,15 @@ public class ItemRecipe
 
     private function orderedSearch(LinkedList<item> items) returns HashList<RecipeIngredient>
         var result = new HashList<RecipeIngredient>
-        var iter = ingredients.iterator()
+        let iter = ingredients.iterator()
         var slot = 0
 
         while iter.hasNext() // test() validated this.count against items size already
             var found = false
             var ingredient = iter.next()
-            var idx = ingredient.index
-            var itm = items.get(slot)
-            var charges = itm.getCharges()
+            let idx = ingredient.index
+            let itm = items.get(slot)
+            let charges = itm.getCharges()
 
             while ingredient.index == idx // treats each part of recipe as possible batch
                 if itm.getTypeId() == ingredient.itemTypeId and charges >= ingredient.charges
@@ -253,19 +253,19 @@ public class ItemRecipe
     private function unorderedSearch(LinkedList<item> items) returns HashList<RecipeIngredient>
         var result = new HashList<RecipeIngredient>()
         var iter = ingredients.iterator()
-        var last = items.size() - 1
+        let last = items.size() - 1
 
         while iter.hasNext()
             var found = false
-            var idx = iter.next().index
-            var head = iter.current // save head of current batch
+            let idx = iter.next().index
+            let head = iter.current // save head of current batch
 
             for slot = 0 to last
                 // Attempt to find any matching item from given batch within items collection
                 if result.get(slot) == null
-                    var itm = items.get(slot)
-                    var itemTypeId = itm.getTypeId()
-                    var charges = itm.getCharges()
+                    let itm = items.get(slot)
+                    let itemTypeId = itm.getTypeId()
+                    let charges = itm.getCharges()
                     var ingredient = head.elem
 
                     while ingredient.index == idx
@@ -306,23 +306,23 @@ public class ItemRecipe
 
     /** Checks if recipe can be assembled for specified unit. */
     function test(unit whichUnit) returns HashList<RecipeIngredient>
-        var items = whichUnit.getItemList()
-        var result = test(whichUnit, items)
+        let items = whichUnit.getItemList()
+        let result = test(whichUnit, items)
         destroy items
         return result
 
     /** Attempts to assemble recipe for specified unit given the ingredients list. */
     function assemble(unit whichUnit, LinkedList<item> fromItems) returns boolean
-        var fromIngredients = test(whichUnit, fromItems)
+        let fromIngredients = test(whichUnit, fromItems)
         if fromIngredients == null
             return false
 
-        var rewardItm = createItem(reward, whichUnit.getPos())
+        let rewardItm = createItem(reward, whichUnit.getPos())
         if charges > 0
             rewardItm.setCharges(charges)
 
-        var usedItems = new LinkedList<item>()
-        var last = fromItems.size() - 1
+        let usedItems = new LinkedList<item>()
+        let last = fromItems.size() - 1
         for i = 0 to last
             if fromIngredients.get(i) != null
                 usedItems.push(fromItems.get(i))
@@ -330,9 +330,9 @@ public class ItemRecipe
         fireEvent(eventInfo(this, whichUnit, rewardItm, usedItems))
 
         for i = 0 to last
-            var ingredient = fromIngredients.get(i)
+            let ingredient = fromIngredients.get(i)
             if ingredient != null
-                var itm = fromItems.get(i)
+                let itm = fromItems.get(i)
                 if ingredient.charges > 0
                     if itm.getCharges() > ingredient.charges and not ingredient.perishable
                         itm.setCharges(itm.getCharges() - ingredient.charges)
@@ -348,8 +348,8 @@ public class ItemRecipe
 
     /** Attempts to assemble recipe for specified unit. */
     function assemble(unit whichUnit) returns boolean
-        var items = whichUnit.getItemList()
-        var result = assemble(whichUnit, items)
+        let items = whichUnit.getItemList()
+        let result = assemble(whichUnit, items)
         destroy items
         return result
 
@@ -357,7 +357,7 @@ public class ItemRecipe
     function disassemble(unit whichUnit) returns boolean        
         if permanent
             return false
-        var last = whichUnit.inventorySize() - 1
+        let last = whichUnit.inventorySize() - 1
         var result = false
 
         for slot = 0 to last
@@ -378,7 +378,7 @@ public class ItemRecipe
 /** Attempts to assemble specified item type for provided unit. */
 public function unit.assembleItem(int itemTypeId) returns boolean
     var result = false
-    var recipes = ItemRecipe.getRecipesForReward(itemTypeId)
+    let recipes = ItemRecipe.getRecipesForReward(itemTypeId)
     if recipes != null
         for recipe in recipes
             if recipe.assemble(this)
@@ -390,29 +390,29 @@ public function unit.assembleItem(int itemTypeId) returns boolean
 public function unit.disassembleItem(item whichItem) returns boolean
     var result = false
     if this.hasItem(whichItem)
-        var recipes = ItemRecipe.getRecipesForReward(whichItem.getTypeId())
+        let recipes = ItemRecipe.getRecipesForReward(whichItem.getTypeId())
         // Disassembling item with multiple recipe variants is ambiguous
         if recipes != null and recipes.size() == 1
             result = recipes.getFirst().disassemble(this)
     return result
 
 function onPickup()
-    var itemTypeId = GetManipulatedItem().getTypeId()
-    var recipes = ItemRecipe.getRecipesWithIngredient(itemTypeId)
+    let itemTypeId = GetManipulatedItem().getTypeId()
+    let recipes = ItemRecipe.getRecipesWithIngredient(itemTypeId)
 
     if recipes != null
-        var u = GetTriggerUnit()
+        let u = GetTriggerUnit()
         for recipe in recipes
             if recipe.pickupable and recipe.assemble(u)
                 break
 
 function onMoved()
-    var itm = getInventoryManipulatedItem()
-    var recipes = ItemRecipe.getRecipesWithIngredient(itm.getTypeId())
+    let itm = getInventoryManipulatedItem()
+    let recipes = ItemRecipe.getRecipesWithIngredient(itm.getTypeId())
 
     if recipes != null
-        var u = getInventoryManipulatingUnit()
-        var items = u.getItemList()
+        let u = getInventoryManipulatingUnit()
+        let items = u.getItemList()
         items.set(getInventorySlotFrom(), getInventorySwappedItem())
         items.set(getInventorySlotTo(), itm)
 
@@ -422,25 +422,25 @@ function onMoved()
         destroy items
 
 function onCast()
-    var recipes = ItemRecipe.getRecipesWithAbility(GetSpellAbilityId())
+    let recipes = ItemRecipe.getRecipesWithAbility(GetSpellAbilityId())
     if recipes != null
-        var u = GetTriggerUnit()
+        let u = GetTriggerUnit()
         for recipe in recipes
             if recipe.assemble(u)
                 break
 
 function getCheatRecipe(unit u, item itm) returns ItemRecipe
-    var recipes = ItemRecipe.getRecipesWithIngredient(itm.getTypeId())
+    let recipes = ItemRecipe.getRecipesWithIngredient(itm.getTypeId())
     if recipes == null
         return null
 
     ItemRecipe result = null
-    var items = u.getItemList()
+    let items = u.getItemList()
     items.push(itm)
-    var iter = recipes.iterator()
+    let iter = recipes.iterator()
 
     while iter.hasNext() and result == null
-        var recipe = iter.next()
+        let recipe = iter.next()
         if recipe.pickupable and not recipe.ordered
             for ingredient in recipe.getIngredients()
                 // At least one item has to removed, in order to fit recipe reward in
@@ -452,12 +452,12 @@ function getCheatRecipe(unit u, item itm) returns ItemRecipe
     return result
 
 function onSmoothPickup()
-    var u = getSmoothItemPickupUnit()
-    var itm = getSmoothItemPickupItem()
-    var recipe = getCheatRecipe(u, itm)
+    let u = getSmoothItemPickupUnit()
+    let itm = getSmoothItemPickupItem()
+    let recipe = getCheatRecipe(u, itm)
 
     if recipe != null
-        var items = u.getItemList()
+        let items = u.getItemList()
         items.push(itm)
         recipe.assemble(u, items)
         destroy items

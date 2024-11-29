@@ -56,27 +56,27 @@ public function registerInventoryEvent(EVENT_ITEM_INVENTORY whichEvent, code fun
             eventUsedTrigger.addCondition(Condition(func))
 
 function fireEvent(trigger evt, eventInfo currState)
-    var prevState = eventState
+    let prevState = eventState
     eventState = currState
     evt.evaluate()
     eventState = prevState
 
 function onItemOrder()
-    var order = GetIssuedOrderId()
-    var u = GetTriggerUnit()
+    let order = GetIssuedOrderId()
+    let u = GetTriggerUnit()
 
     if order >= SpecialOrders.itemdrag00 and order <= SpecialOrders.itemdrag05
-        var itm = GetOrderTargetItem()
-        var slotFrom = u.getItemSlot(itm)
-        var slotTo = order - SpecialOrders.itemdrag00
+        let itm = GetOrderTargetItem()
+        let slotFrom = u.getItemSlot(itm)
+        let slotTo = order - SpecialOrders.itemdrag00
         fireEvent(eventMovedTrigger, eventInfo(u, itm, slotFrom, slotTo))
     else
-        var slotFrom = order - SpecialOrders.itemuse00
-        var itm = u.itemInSlot(slotFrom)
+        let slotFrom = order - SpecialOrders.itemuse00
+        let itm = u.itemInSlot(slotFrom)
         fireEvent(eventUsedTrigger, eventInfo(u, itm, slotFrom, -1))
 
 function onAnyOrder()
-    var order = GetIssuedOrderId()
+    let order = GetIssuedOrderId()
     if order >= SpecialOrders.itemdrag00 and order <= SpecialOrders.itemuse05
         onItemOrder()
 
